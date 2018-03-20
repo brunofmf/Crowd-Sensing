@@ -1,9 +1,8 @@
 # Probe-request-counter
 A probe request counter using ESP8266 NodeMCU and Arduino IDE
 
-Just open the sketch on Arduino IDE and redefine some variables such as:
-- (<b>mandatory</b>) clientNetwork and clientPassword (or comment that code and it will not connect to any network but it will still work as an AP and count the probe requests)
-- (<b>optional</b>) arraySize, ssid, password, serverURL and sightingsInterval
+Just open the sketch on Arduino IDE and, <b>optionally</b>, redefine some variables (it will still work if you don't redefine them):
+- arraySize, clientNetwork, clientPassword, ssid, password, serverURL and sightingsInterval
 
 Then, on the Tools tab define the correct options (baud, board, port, ...) and upload it to the board.
 
