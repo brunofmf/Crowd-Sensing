@@ -9,8 +9,8 @@ Then, on the Tools tab define the correct options (baud, board, port, ...) and u
 
 You may open the Serial Monitor to visualize received probes. 
 It also accepts the following commands:
-- Stop: stops the handlers that capture the data
-- Restart: restarts the handlers if they have been stopped
-- Count: prints the number of distinct detected devices
-- Print: prints the entire list of detected devices
-- Send: sends the list of detected devices in JSON to the specified server
+- <b>Stop</b> - stops the handlers that capture the data
+- <b>Restart</b> - restarts the handlers if they have been stopped
+- <b>Count</b> - prints the number of distinct detected devices
+- <b>Print</b> - prints the entire list of detected devices
+- <b>Send</b> - sends the list of detected devices in JSON to the specified server
