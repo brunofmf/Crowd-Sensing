@@ -25,5 +25,5 @@ It also accepts the following commands:
 - <b>Print</b> - prints the entire list of detected devices
 - <b>Clear</b> - clears the entire list of detected devices
 - <b>Send</b> - sends the list of detected devices in JSON to the specified Firebase database
-- <b>Start Timer</b> - starts a timer that sends the list of detected devices every *sendTimer* seconds (default: 45s), in JSON, to the specified Firebase database
+- <b>Start Timer</b> - starts a timer that sends the list of detected devices every *sendTimer* seconds (default: 20s), in JSON, to the specified Firebase database
 - <b>Stop Timer</b> - stops the timer
