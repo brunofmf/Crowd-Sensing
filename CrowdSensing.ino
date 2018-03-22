@@ -1,9 +1,9 @@
 /*************************************************
     This sketch was written and developed by Bruno Fernandes in March 2018.
     
-    It is partially based in others such as
+    Portions of this code are partially based in others such as
     WiFiEvents (by Markus Sattler and Ivan Grokhotkov)
-    and mqtt_arduino (by Tony DiCola and Todd Treece).
+    and FirebaseDemo_ESP8266 (by Google Inc).
 
     MIT Licensed
 *************************************************/
