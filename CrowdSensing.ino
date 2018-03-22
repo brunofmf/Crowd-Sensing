@@ -26,15 +26,15 @@
 #define CMD_STOP_TIMER    "Stop Timer"
 
 /** Firebase Setup **/
-#define FIREBASE_HOST     "dummy.firebaseio.com"	//Set Firebase Host
-#define FIREBASE_AUTH     "dummy_auth"				//Set Firebase Auth
+#define FIREBASE_HOST     "dummy.firebaseio.com"  //Set Firebase Host
+#define FIREBASE_AUTH     "dummy_auth"            //Set Firebase Auth
 #define FIREBASE_PUSH     "ProbeData"
 
 /** WiFi Connection Data **/
 #define AP_SSID           "ap-density"
 #define AP_PASSWORD       "ap-Pa$$word"
-#define STATION_NETWORK   "dummy_net"   			//Set station network
-#define STATION_PASSWORD  "dummy_pass"      		//Set station password
+#define STATION_NETWORK   "dummy_net"             //Set station network
+#define STATION_PASSWORD  "dummy_pass"            //Set station password
 
 /** Probe Data Struct **/
 struct probeData {
@@ -55,7 +55,7 @@ bool sendNow          = false;
 /** Time Variables **/
 long sightingsInterval  = 60000; //1 minute
 long connectionWait     = 15000; //15 seconds
-long sendTimer          = 45000; //45 seconds
+long sendTimer          = 20000; //20 seconds
 
 /** Os Timer **/
 os_timer_t theTimer;
@@ -152,7 +152,7 @@ void loop() {
   }
   //If timer told us it is time to send Data
   if(sendNow){
-    sendDataFirebase(false);
+    sendDataFirebase(true);
     sendNow = false;
   }
 }
@@ -175,10 +175,6 @@ void onProbeRequestCaptureData(const WiFiEventSoftAPModeProbeRequestReceived& ev
       probeArray[currIndex].mac = macToString(evt.mac);
       probeArray[currIndex].rssi = evt.rssi;
       probeArray[currIndex++].previousMillisDetected = millis();
-    }
-  } else{ //Limit achieved - Flush Data
-    if(isConnected){
-      sendDataFirebase(true);
     }
   }
 }
