@@ -95,7 +95,7 @@ void setup() {
     isConnected = true;
   } else{
     Serial.print(" Connection to "); Serial.print(STATION_NETWORK);
-    Serial.println(" failed! Board will work only as an AP...");
+    Serial.println(" failed! Board will only work as an AP......");
   }
 
   if(isConnected){
@@ -138,34 +138,14 @@ void loop() {
       delay(1000);  
     } else if(command.equalsIgnoreCase(CMD_CLEAR)){
       clearData();
-      Serial.println(F("*** Data cleared! ***"));
       delay(1000);  
     } else if(command.equalsIgnoreCase(CMD_SEND)){
-      //Send Data to Firebase only if station connected
-      if(isConnected){
-        sendDataFirebase(false);
-        delay(1000);
-      } else{
-        Serial.println(F("*** Not possible to send data! There is no connection - board is only working as AP ***"));
-      }
+      sendDataCmd();
+      delay(1000); 
     } else if(command.equalsIgnoreCase(CMD_START_TIMER)){
-      //Send data to Firebase every sendTimer seconds - only if station is connected
-      if(isConnected){
-        timerIsActive = true;
-        Serial.println(F("*** Timer started! ***"));
-      } else{
-        Serial.println(F("*** Not possible to set timer! There is no connection - board is only working as AP ***"));
-      }
-      delay(1000); 
+      startTimer(); 
     } else if(command.equalsIgnoreCase(CMD_STOP_TIMER)){
-      //Stop timer
-      if(isConnected){
-        timerIsActive = false;
-        Serial.println(F("*** Timer stopped! ***"));
-      } else{
-        Serial.println(F("*** Not possible to set timer! There is no connection - board is only working as AP ***"));
-      }
-      delay(1000); 
+      stopTimer();
     } else{
       Serial.println(F("Unknown command!"));
     }
@@ -206,15 +186,23 @@ void onProbeRequestCaptureData(const WiFiEventSoftAPModeProbeRequestReceived& ev
 void onProbeRequestPrint(const WiFiEventSoftAPModeProbeRequestReceived& evt) {
   Serial.print("Probe request from: ");
   Serial.print(macToString(evt.mac));
-  Serial.print(" RSSI: ");
+  Serial.print("; RSSI: ");
   Serial.print(evt.rssi);
-  Serial.print(" Millis Last Detected: ");
+  Serial.print("; Millis Last Detected: ");
   Serial.println(millis());
 }
 
 void timerCallback(void* z){
   if(timerIsActive)
     sendNow = true;
+}
+
+void sendDataCmd(){
+  if(isConnected){ //Send Data to Firebase only if station connected
+    sendDataFirebase(false);
+  } else{
+    Serial.println(F("*** It is not possible to send data! There is no connection - board is only working as AP ***"));
+  }
 }
 
 void sendDataFirebase(bool clearD){
@@ -239,7 +227,6 @@ void sendDataFirebase(bool clearD){
     if(clearD){
       Serial.println(F("*** Probe Data successfully published in Firebase! Data will be cleared... ***"));
       clearData();
-      Serial.println(F("*** Probe Data successfully cleared! ***"));
     } else{
       Serial.println(F("*** Probe Data successfully published in Firebase! NO data was cleared... ***"));
     }
@@ -253,6 +240,7 @@ void clearData(){
     probeArray[i].previousMillisDetected = 0;
   }
   currIndex = 0;
+  Serial.println(F("*** Probe Data successfully cleared! ***"));
 }
 
 void stopHandlers(){
@@ -281,6 +269,24 @@ void restartHandlers(){
   }
 }
 
+void startTimer(){
+  if(isConnected){ //Send data to Firebase every sendTimer seconds - only if station is connected
+    timerIsActive = true;
+    Serial.println(F("*** Timer started! ***"));
+  } else{
+    Serial.println(F("*** Not possible to set timer! There is no connection - board is only working as AP ***"));
+  }  
+}
+
+void stopTimer(){
+  if(isConnected){
+    timerIsActive = false;
+    Serial.println(F("*** Timer stopped! ***"));
+  } else{
+    Serial.println(F("*** Not possible to set timer! There is no connection - board is only working as AP ***"));
+  }  
+}
+
 bool newSighting(const WiFiEventSoftAPModeProbeRequestReceived& evt){
   String mac = macToString(evt.mac);
   long currTime = millis();
@@ -288,7 +294,7 @@ bool newSighting(const WiFiEventSoftAPModeProbeRequestReceived& evt){
   for(int i = currIndex-1; i>=0; i--){
     //if mac has already been captured
     if(mac.equals(probeArray[i].mac)){
-      //lets check if enough time has passed (1 min since last sighting)
+      //lets check if enough time has passed (sightingsInterval milliseconds since last sighting)
       if(currTime-probeArray[i].previousMillisDetected < sightingsInterval){
         return false;
       }      
