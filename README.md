@@ -1,4 +1,4 @@
-# Probe-request-counter
+# Crowd-Sensing
 A probe request counter using ESP8266 NodeMCU and Arduino IDE
 
 ## Main Achievements
