@@ -13,7 +13,7 @@
 #include "user_interface.h"
 
 /** Probe Data Array Size **/
-#define ARRAY_SIZE        30
+#define ARRAY_SIZE        50
 
 /** Available Commands **/
 #define CMD_RESTART       "Restart"
@@ -44,18 +44,18 @@ struct probeData {
 } probeArray[ARRAY_SIZE];
 
 /** Control Variables **/
-int currIndex         = 0;
-int dumpVersion       = 1;
-bool handlersStopped  = false;
+int currIndex           = 0;
+int dumpVersion         = 1;
+bool handlersStopped    = false;
 String command;
-bool isConnected      = false;
-bool timerIsActive    = false;
-bool sendNow          = false;
+bool isConnected        = false;
+bool timerIsActive      = false;
+bool sendNow            = false;
 
 /** Time Variables **/
 long sightingsInterval  = 60000; //1 minute
 long connectionWait     = 15000; //15 seconds
-long sendTimer          = 20000; //20 seconds
+long sendTimer          = 45000; //45 seconds
 
 /** Os Timer **/
 os_timer_t theTimer;
@@ -176,6 +176,8 @@ void onProbeRequestCaptureData(const WiFiEventSoftAPModeProbeRequestReceived& ev
       probeArray[currIndex].rssi = evt.rssi;
       probeArray[currIndex++].previousMillisDetected = millis();
     }
+  } else{
+    Serial.println(F("*** Array Limit Achieved!! Send and clear it to process more probe requests! ***"));    
   }
 }
 
@@ -204,8 +206,9 @@ void sendDataCmd(){
 void sendDataFirebase(bool clearD){
   DynamicJsonBuffer jsonBuffer; //The default initial size for DynamicJsonBuffer is 256. It allocates a new block twice bigger than the previous one.
   JsonObject& root = jsonBuffer.createObject(); //Create the Json object
-  root["timestamp"] = millis();
-  JsonArray& probes = root.createNestedArray("probes"); //Create child probes array
+  JsonObject& tempTime = root.createNestedObject("timestamp");
+  tempTime[".sv"] = "timestamp";
+  JsonArray& probes = root.createNestedArray("probes" + String(dumpVersion++)); //Create child probes array
   //Fill JsonArray with data
   for(int i = 0; i < currIndex; i++){
     JsonObject& probe = probes.createNestedObject();
@@ -214,7 +217,7 @@ void sendDataFirebase(bool clearD){
     probe["previousMillisDetected"] = probeArray[i].previousMillisDetected;
   }
   //Push JSON to Firebase
-  Firebase.set(FIREBASE_PUSH + String(dumpVersion++), root);
+  Firebase.push(FIREBASE_PUSH, root);
   //Handle error or success
   if (Firebase.failed()){
     Serial.print(F("*** Failed to publish Probe Data! Firebase error: "));
@@ -266,11 +269,11 @@ void restartHandlers(){
 }
 
 void startTimer(){
-  if(isConnected){ //Send data to Firebase every sendTimer seconds - only if station is connected
+  if(isConnected && !handlersStopped){ //Send data to Firebase every sendTimer seconds - only if station is connected and handlers not stopped
     timerIsActive = true;
     Serial.println(F("*** Timer started! ***"));
   } else{
-    Serial.println(F("*** Not possible to set timer! There is no connection - board is only working as AP ***"));
+    Serial.println(F("*** Not possible to set timer! There is no connection - board is only working as AP OR handlers are Stopped ***"));
   }  
 }
 
