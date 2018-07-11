@@ -10,6 +10,7 @@
 #include <ESP8266WiFi.h>
 #include <FirebaseArduino.h>
 #include <stdio.h>
+#include <PubSubClient.h>
 #include "user_interface.h"
 
 /** Probe Data Array Size **/
@@ -25,6 +26,13 @@
 #define CMD_SEND          "Send"
 #define CMD_START_TIMER   "Start Timer"
 #define CMD_STOP_TIMER    "Stop Timer"
+
+/** MQTT Setup **/
+#define MQTTSERVER        "dummy.mqttbroker.com"
+#define MQTTPORT          11111
+#define MQTTUSER          "dummy_user"
+#define MQTTPASSWORD      "dummy_pass"
+#define TOPIC             "ESP32/WIFISENSING"
 
 /** Firebase Setup **/
 #define FIREBASE_HOST     "dummy.firebaseio.com"  //Set Firebase Host
@@ -50,8 +58,10 @@ int dumpVersion         = 1;
 bool handlersStopped    = false;
 String command;
 bool isConnected        = false;
+bool mqttConnected      = false;
 bool timerIsActive      = false;
 bool sendNow            = false;
+bool useMqtt            = true;  //true for MQTT (default); false for Firebase
 
 /** Time Variables **/
 long sightingsInterval  = 60000; //1 minute
@@ -66,6 +76,10 @@ WiFiEventHandler stationConnectedHandler;
 WiFiEventHandler stationDisconnectedHandler;
 WiFiEventHandler probeRequestCaptureDataHandler;
 WiFiEventHandler probeRequestPrintHandler;
+
+/** MQTT Variables **/
+WiFiClient espClient;
+PubSubClient client(espClient);
 
 /** Sketch Functions **/
 void setup() {
@@ -98,13 +112,11 @@ void setup() {
     Serial.println(" failed! Board will only work as an AP......");
   }
 
-  if(isConnected){
-    //coonect to Firebase
-    Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
-    Serial.print(F("*** Secure Firebase connection estabilished using HOST: ")); Serial.print(FIREBASE_HOST);
-    Serial.print(F(" and using AUTH: ")); Serial.print(FIREBASE_AUTH); Serial.println(" ***");
-  } else {    
-    Serial.println(F("*** No Firebase Connection was estabilished! ***"));
+  //Setup the MQTT/Firebase Connection
+  if(useMqtt){
+    setupMqtt();
+  } else {
+    setupFirebase();
   }
   
   //Setup timer
@@ -161,8 +173,11 @@ void loop() {
   }
   //If timer told us it is time to send Data
   if(sendNow){
-    sendDataFirebase(true);
+    buildAndPublish(true);
     sendNow = false;
+    if(useMqtt){
+      client.loop();
+    }
   }
 }
 
@@ -199,6 +214,55 @@ void onProbeRequestPrint(const WiFiEventSoftAPModeProbeRequestReceived& evt) {
   Serial.println(millis());
 }
 
+void setupMqtt(){
+  int connectionAttempts = 6;
+  if(isConnected){
+    client.setServer(MQTTSERVER, MQTTPORT);
+    while (!client.connected() && connectionAttempts > 0) {
+      Serial.print("*** Connecting to MQTT... "); 
+      if (client.connect("ESP8266Client", MQTTUSER, MQTTPASSWORD)) { 
+        Serial.println("Connected!! ***"); 
+        mqttConnected = true;
+      } else { 
+        Serial.print("Failed with state: ");
+        Serial.println(client.state());
+        delay(2000); 
+      }
+      connectionAttempts--;
+    }
+    if(!client.connected()){
+      Serial.println(F("*** It is not possible to connect to the MQTT Server! ***"));
+    }
+  } else{
+    Serial.println(F("*** It is not possible to connect to the MQTT Server! There is no WiFi connection! ***"));
+  } 
+}
+
+void setupFirebase(){
+  if(isConnected){
+    //connect to Firebase
+    Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+    Serial.print(F("*** Secure Firebase connection estabilished using HOST: ")); Serial.print(FIREBASE_HOST);
+    Serial.print(F(" and using AUTH: ")); Serial.print(FIREBASE_AUTH); Serial.println(" ***");
+  } else {    
+    Serial.println(F("*** No Firebase Connection was estabilished! There is no WiFi connection! ***"));
+  }
+}
+
+boolean publishMqtt(char topic[], char payload[]){
+  if(mqttConnected){  
+    //Required...
+    setupMqtt();
+    client.publish(topic, payload);
+    Serial.print("*** Payload Successfully Published in topic: ");
+    Serial.print(TOPIC); Serial.println(" ***"); 
+    return true;
+  } else{
+    Serial.println(F("*** It is not possible to publish data! There is no MQTT connection! ***"));
+    return false;
+  } 
+}
+
 void timerCallback(void* z){
   if(timerIsActive)
     sendNow = true;
@@ -206,18 +270,23 @@ void timerCallback(void* z){
 
 void sendDataCmd(){
   if(isConnected){ //Send Data to Firebase only if station connected
-    sendDataFirebase(false);
+    buildAndPublish(false);
   } else{
     Serial.println(F("*** It is not possible to send data! There is no connection - board is only working as AP ***"));
   }
 }
 
-void sendDataFirebase(bool clearD){
+void buildAndPublish(bool clearD){
+  boolean published = false;
   DynamicJsonBuffer jsonBuffer; //The default initial size for DynamicJsonBuffer is 256. It allocates a new block twice bigger than the previous one.
   JsonObject& root = jsonBuffer.createObject(); //Create the Json object
   root["type"] = SENSE_TYPE;
   JsonObject& tempTime = root.createNestedObject("timestamp");
-  tempTime[".sv"] = "timestamp";
+  if(useMqtt){
+    tempTime[".sv"] = millis();
+  } else{
+    tempTime[".sv"] = "timestamp";
+  }
   JsonArray& probes = root.createNestedArray("probes" + String(dumpVersion++)); //Create child probes array
   //Fill JsonArray with data
   for(int i = 0; i < currIndex; i++){
@@ -226,18 +295,29 @@ void sendDataFirebase(bool clearD){
     probe["rssi"] = probeArray[i].rssi;
     probe["previousMillisDetected"] = probeArray[i].previousMillisDetected;
   }
-  //Push JSON to Firebase
-  Firebase.push(FIREBASE_PUSH, root);
+  //Push JSON
+  if(useMqtt){
+    char payload[root.measureLength()+1];
+    root.printTo((char*)payload, root.measureLength()+1);
+    published = publishMqtt(TOPIC, payload);
+  } else {
+    Firebase.push(FIREBASE_PUSH, root);
+    published = !(Firebase.failed());
+  }  
   //Handle error or success
-  if (Firebase.failed()){
-    Serial.print(F("*** Failed to publish Probe Data! Firebase error: "));
-    Serial.print(Firebase.error()); Serial.println(" ***");
-  } else{
+  if (published){
     if(clearD){
-      Serial.println(F("*** Probe Data successfully published in Firebase! Data will be cleared... ***"));
+      Serial.println(F("*** Probe Data successfully published! Data will be cleared... ***"));
       clearData();
     } else{
-      Serial.println(F("*** Probe Data successfully published in Firebase! NO data was cleared... ***"));
+      Serial.println(F("*** Probe Data successfully published! NO data was cleared... ***"));
+    }    
+  } else{
+    if(useMqtt){
+      Serial.println(F("*** Failed to publish Probe Data in MQTT!! ***"));  
+    } else{  
+      Serial.print(F("*** Failed to publish Probe Data! Firebase error: "));
+      Serial.print(Firebase.error()); Serial.println(" ***");
     }
   }
 }
