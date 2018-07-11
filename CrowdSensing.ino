@@ -32,7 +32,7 @@
 #define MQTTPORT          11111
 #define MQTTUSER          "dummy_user"
 #define MQTTPASSWORD      "dummy_pass"
-#define TOPIC             "ESP32/WIFISENSING"
+#define TOPIC             "ESP8266/WIFISENSING"
 
 /** Firebase Setup **/
 #define FIREBASE_HOST     "dummy.firebaseio.com"  //Set Firebase Host
