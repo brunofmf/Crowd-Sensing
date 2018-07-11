@@ -14,6 +14,7 @@
 
 /** Probe Data Array Size **/
 #define ARRAY_SIZE        50
+#define SENSE_TYPE        "WIFI"
 
 /** Available Commands **/
 #define CMD_RESTART       "Restart"
@@ -54,7 +55,7 @@ bool sendNow            = false;
 
 /** Time Variables **/
 long sightingsInterval  = 60000; //1 minute
-long connectionWait     = 15000; //15 seconds
+long connectionWait     = 35000; //35 seconds
 long sendTimer          = 45000; //45 seconds
 
 /** Os Timer **/
@@ -90,8 +91,7 @@ void setup() {
   }
   if(WiFi.status() == WL_CONNECTED) {
     Serial.print(" Connected to "); Serial.print(STATION_NETWORK);
-    Serial.print("; IP address: "); Serial.print(WiFi.localIP());
-    Serial.println(" ......");
+    Serial.print("; IP address: "); Serial.println(WiFi.localIP());
     isConnected = true;
   } else{
     Serial.print(" Connection to "); Serial.print(STATION_NETWORK);
@@ -119,6 +119,15 @@ void setup() {
   // Call "onProbeRequestCaptureData" and "onProbeRequestPrint" each time a probe request is received.
   probeRequestPrintHandler = WiFi.onSoftAPModeProbeRequestReceived(&onProbeRequestPrint);
   probeRequestCaptureDataHandler = WiFi.onSoftAPModeProbeRequestReceived(&onProbeRequestCaptureData);
+
+  Serial.print("*** All setup has been made! ");
+  if(isConnected){
+    Serial.print("Timer is enabled and publish of data will happen every ");
+    Serial.print(sendTimer); Serial.println(" milliseconds ***");
+    startTimer();
+  } else {
+    Serial.println("Timer is DISABLED! ***");
+  }
 }
 
 void loop() {
@@ -206,6 +215,7 @@ void sendDataCmd(){
 void sendDataFirebase(bool clearD){
   DynamicJsonBuffer jsonBuffer; //The default initial size for DynamicJsonBuffer is 256. It allocates a new block twice bigger than the previous one.
   JsonObject& root = jsonBuffer.createObject(); //Create the Json object
+  root["type"] = SENSE_TYPE;
   JsonObject& tempTime = root.createNestedObject("timestamp");
   tempTime[".sv"] = "timestamp";
   JsonArray& probes = root.createNestedArray("probes" + String(dumpVersion++)); //Create child probes array
