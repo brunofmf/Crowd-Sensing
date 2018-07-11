@@ -12,8 +12,8 @@ A Crowd Sensor using ESP8266 NodeMCU and Arduino IDE
 ## Setup Notes
 Just open the sketch on Arduino IDE and, <i>optionally</i>, redefine some variables:
 - <i>useMqtt</i> variable defines the use of MQTT broker (true value - <b>the default</b>) or Firebase (false value)
-- <i>FIREBASE_HOST</i>, <i>FIREBASE_AUTH</i> and <i>FIREBASE_PUSH</i> (Firebase setup - it will still print probes if no setup is made for Firebase)
-- <i>MQTTSERVER</i>, <i>MQTTPORT</i>, <i>MQTTUSER</i> and <i>MQTTPASSWORD</i>
+- <i>FIREBASE_HOST</i>, <i>FIREBASE_AUTH</i> and <i>FIREBASE_PUSH</i> (Firebase setup - it will still print probes if no setup is made)
+- <i>MQTTSERVER</i>, <i>MQTTPORT</i>, <i>MQTTUSER</i> and <i>MQTTPASSWORD</i> (MQTT setup - it will still print probes if no setup is made)
 - STATION_NETWORK and STATION_PASSWORD (WiFi credentials - if not defined the board will only work as an AP)
 
 Then, on the Tools tab define the correct options (baud, board, port, ...) and upload the sketch to the board. You should use an upload speed of, at least, 57600 otherwise strange timeouts will occur when uploading the sketch!  
