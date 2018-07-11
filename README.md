@@ -12,8 +12,8 @@ A Crowd Sensor using ESP8266 NodeMCU and Arduino IDE
 ## Setup Notes
 Just open the sketch on Arduino IDE and, <i>optionally</i>, redefine some variables:
 - <i>useMqtt</i> variable defines the use of MQTT broker (true value - <b>the default</b>) or Firebase (false value)
-- <i>FIREBASE_HOST</i>, <i>FIREBASE_AUTH</i> and <i>FIREBASE_PUSH</i> (Firebase setup - it will still print probes if no setup is made for Firebase)
-- <i>MQTTSERVER</i>, <i>MQTTPORT</i>, <i>MQTTUSER</i> and <i>MQTTPASSWORD</i>
+- <i>FIREBASE_HOST</i>, <i>FIREBASE_AUTH</i> and <i>FIREBASE_PUSH</i> (Firebase setup - it will still print probes if no setup is made)
+- <i>MQTTSERVER</i>, <i>MQTTPORT</i>, <i>MQTTUSER</i> and <i>MQTTPASSWORD</i> (MQTT setup - it will still print probes if no setup is made)
 - STATION_NETWORK and STATION_PASSWORD (WiFi credentials - if not defined the board will only work as an AP)
 
 Then, on the Tools tab define the correct options (baud, board, port, ...) and upload the sketch to the board. You should use an upload speed of, at least, 57600 otherwise strange timeouts will occur when uploading the sketch!  
@@ -23,7 +23,7 @@ Then, on the Tools tab define the correct options (baud, board, port, ...) and u
 <b>Additional Notes:</b>
 - You will need to install, on Arduino IDE, <i>FirebaseArduino</i> and <i>PubSubClient</i> libs
 - PubSubClient <i>publish()</i> works with a QoS of 0: there are no guarantees data will reach the broker
-- the <i>PubSubClient</i> library limits the payload to 128 bytes on the <i>MQTT_MAX_PACKET_SIZE</i> variable. As we may sense several devices, the JSON may get quite big and this space will prevent the payload from being sent to the MQTT broker! You must navigate to <i>..\libraries\PubSubClient\src</i>, open the file entitled as <i>PubSubClient.h</i> and increase the <i>MQTT_MAX_PACKET_SIZE</i> value (I've changed it 4096)
+- The <i>PubSubClient</i> library limits the payload to 128 bytes on the <i>MQTT_MAX_PACKET_SIZE</i> variable. As we may sense several devices, the JSON may get quite big and this space will prevent the payload from being sent to the MQTT broker! You must navigate to <i>..\libraries\PubSubClient\src</i>, open the file entitled as <i>PubSubClient.h</i> and increase the <i>MQTT_MAX_PACKET_SIZE</i> value (I've changed it 4096)
 - If WiFi is available then the timer will start automatically and will wake up all <i>sendTimer</i> seconds
 - As MQTT broker you can use <i>CloudMQTT</i> (they have a free plan) and as client you can use, for example, <i>HiveMQ</i> or even <i>CloudMQTT</i>
 
