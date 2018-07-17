@@ -287,7 +287,7 @@ void buildAndPublish(bool clearD){
   } else{
     tempTime[".sv"] = "timestamp";
   }
-  JsonArray& probes = root.createNestedArray("probes" + String(dumpVersion++)); //Create child probes array
+  JsonArray& probes = root.createNestedArray("probes"); //Create child probes array
   //Fill JsonArray with data
   for(int i = 0; i < currIndex; i++){
     JsonObject& probe = probes.createNestedObject();
