@@ -16,6 +16,7 @@
 /** Probe Data Array Size **/
 #define ARRAY_SIZE        50
 #define SENSE_TYPE        "WIFI"
+#define DEVICE_ID         "BRUNO_ID1"
 
 /** Available Commands **/
 #define CMD_RESTART       "Restart"
@@ -231,10 +232,10 @@ void setupMqtt(){
       connectionAttempts--;
     }
     if(!client.connected()){
-      Serial.println(F("*** It is not possible to connect to the MQTT Server! ***"));
+      Serial.println(F("*** It is not possible to connect to the MQTT Broker! ***"));
     }
   } else{
-    Serial.println(F("*** It is not possible to connect to the MQTT Server! There is no WiFi connection! ***"));
+    Serial.println(F("*** It is not possible to connect to the MQTT Broker! There is no WiFi connection! ***"));
   } 
 }
 
@@ -281,6 +282,7 @@ void buildAndPublish(bool clearD){
   DynamicJsonBuffer jsonBuffer; //The default initial size for DynamicJsonBuffer is 256. It allocates a new block twice bigger than the previous one.
   JsonObject& root = jsonBuffer.createObject(); //Create the Json object
   root["type"] = SENSE_TYPE;
+  root["deviceId"] = DEVICE_ID;
   JsonObject& tempTime = root.createNestedObject("timestamp");
   if(useMqtt){
     tempTime[".sv"] = millis();
